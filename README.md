@@ -27,6 +27,7 @@ jobs:
   slides:
     if: github.event.issue.pull_request && contains(github.event.comment.body, '/slides')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: byrnehollander/slides-pls-action@v1
         with:
@@ -66,7 +67,7 @@ Comment `/slides` on any PR. That's it!
 | `cloudflare_api_token` | If cloudflare | - | Cloudflare API token |
 | `cloudflare_account_id` | If cloudflare | - | Cloudflare account ID |
 | `project_prefix` | No | repo name | URL prefix (e.g., `acme` → `acme-pr-123.pages.dev`) |
-| `model` | No | `claude-sonnet-4-20250514` | Claude model to use |
+| `model` | No | `claude-sonnet-4-20250514` | Claude model (e.g., `claude-opus-4-5-20250514`) |
 | `command` | No | `/slides` | Trigger command in comments |
 
 ### Outputs
