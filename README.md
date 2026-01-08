@@ -40,11 +40,13 @@ jobs:
 
 In your repo settings → Secrets and variables → Actions:
 
-| Secret/Variable | Where to get it |
-|-----------------|-----------------|
+| Name | Where to get it |
+|------|-----------------|
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) |
 | `CLOUDFLARE_API_TOKEN` | [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) - needs "Cloudflare Pages:Edit" permission |
-| `CLOUDFLARE_ACCOUNT_ID` (variable) | Found in your Cloudflare dashboard URL or sidebar |
+| `CLOUDFLARE_ACCOUNT_ID` | Found in your Cloudflare dashboard URL or sidebar |
+
+> **Note:** All inputs accept either secrets (`${{ secrets.X }}`) or variables (`${{ vars.X }}`). Use whichever fits your setup.
 
 ### 3. Use it
 
@@ -127,6 +129,22 @@ If you want to deploy yourself or just download the slides:
     deployment: 'artifact-only'
 
 # Slides are available as an artifact and at ${{ steps.slides.outputs.slides_path }}
+```
+
+### Migrating from a custom workflow
+
+If you have an existing slides workflow with custom settings:
+
+```yaml
+- uses: byrnehollander/slides-pls-action@v1
+  with:
+    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}  # or vars.X
+    command: '/generate-slides'     # Your existing trigger
+    project_prefix: 'myapp'         # Your existing URL prefix
+    model: 'claude-opus-4-5-20250514'  # Optional: use Opus
 ```
 
 ---
