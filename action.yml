@@ -1,0 +1,391 @@
+name: 'slides-pls'
+description: 'Generate beautiful Slidev presentations from PR diffs using Claude AI'
+author: 'byrnehollander'
+
+branding:
+  icon: 'film'
+  color: 'purple'
+
+inputs:
+  anthropic_api_key:
+    description: 'Anthropic API key for Claude'
+    required: true
+  github_token:
+    description: 'GitHub token for PR access and comments'
+    required: true
+  deployment:
+    description: 'Deployment target: cloudflare or artifact-only'
+    required: false
+    default: 'cloudflare'
+  cloudflare_api_token:
+    description: 'Cloudflare API token (required for cloudflare deployment)'
+    required: false
+  cloudflare_account_id:
+    description: 'Cloudflare account ID (required for cloudflare deployment)'
+    required: false
+  project_prefix:
+    description: 'Prefix for deployment URLs (e.g., "acme" -> acme-pr-123.pages.dev)'
+    required: false
+    default: ''
+  model:
+    description: 'Claude model to use'
+    required: false
+    default: 'claude-sonnet-4-20250514'
+  command:
+    description: 'Trigger command in PR comments'
+    required: false
+    default: '/slides'
+
+outputs:
+  slides_url:
+    description: 'URL to the deployed presentation'
+    value: ${{ steps.deploy.outputs.url }}
+  slides_path:
+    description: 'Path to built slides directory'
+    value: ${{ steps.build.outputs.path }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Validate inputs
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [[ "${{ inputs.deployment }}" == "cloudflare" ]]; then
+          if [[ -z "${{ inputs.cloudflare_api_token }}" ]]; then
+            echo "::error::cloudflare_api_token is required when deployment is 'cloudflare'"
+            exit 1
+          fi
+          if [[ -z "${{ inputs.cloudflare_account_id }}" ]]; then
+            echo "::error::cloudflare_account_id is required when deployment is 'cloudflare'"
+            exit 1
+          fi
+        fi
+
+    # Setup runtime
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+
+    # Checkout user's repository
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # Checkout action repository for templates
+    - name: Checkout action templates
+      uses: actions/checkout@v4
+      with:
+        repository: byrnehollander/slides-pls-action
+        path: .slides-pls
+        sparse-checkout: |
+          src
+          slidev-template
+
+    # Add eyes reaction to acknowledge the request
+    - name: Acknowledge request
+      uses: actions/github-script@v7
+      continue-on-error: true
+      with:
+        github-token: ${{ inputs.github_token }}
+        script: |
+          await github.rest.reactions.createForIssueComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: context.payload.comment.id,
+            content: 'eyes'
+          });
+
+    # Get PR number and info
+    - name: Get PR info
+      id: pr-info
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        PR_NUMBER="${{ github.event.issue.number }}"
+        echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        echo "today=$(TZ=America/New_York date +'%B %-d, %Y')" >> $GITHUB_OUTPUT
+
+        # Extract any instructions after the command
+        COMMENT_BODY="${{ github.event.comment.body }}"
+        COMMAND="${{ inputs.command }}"
+        INSTRUCTIONS=$(echo "$COMMENT_BODY" | sed "s|$COMMAND||" | xargs)
+        echo "instructions=$INSTRUCTIONS" >> $GITHUB_OUTPUT
+
+    # Determine project prefix
+    - name: Set project prefix
+      id: prefix
+      shell: bash
+      run: |
+        PREFIX="${{ inputs.project_prefix }}"
+        if [[ -z "$PREFIX" ]]; then
+          PREFIX="${{ github.event.repository.name }}"
+        fi
+        echo "prefix=$PREFIX" >> $GITHUB_OUTPUT
+
+    # Copy slidev template to working directory
+    - name: Setup Slidev template
+      shell: bash
+      run: |
+        cp -r .slides-pls/slidev-template .slides-working
+        cp .slides-pls/src/build-slides.mjs .slides-working/
+        cp .slides-pls/src/sanitize.mjs .slides-working/
+
+    # Generate slides using Claude
+    - name: Generate slides
+      id: generate
+      uses: anthropics/claude-code-action@v1
+      with:
+        anthropic_api_key: ${{ inputs.anthropic_api_key }}
+        github_token: ${{ inputs.github_token }}
+        prompt: |
+          Generate a Slidev presentation for PR #${{ steps.pr-info.outputs.pr_number }}.
+
+          Your task has THREE PHASES. Complete each phase in sequence.
+
+          ═══════════════════════════════════════════════════════════════
+          ## PHASE 1: GENERATE
+          ═══════════════════════════════════════════════════════════════
+
+          1. Use `gh pr view ${{ steps.pr-info.outputs.pr_number }}` to get PR title and description
+          2. Use `gh pr diff ${{ steps.pr-info.outputs.pr_number }}` to see the changes
+          3. Read files in directories touched by the PR to understand patterns
+          4. Read the CLAUDE.md (if it exists) to understand project architecture
+          5. Read .slides-pls/src/prompt-template.md for required slide structure
+          6. Write the slides to .slides-working/slides.md
+
+          **Context:**
+          - PR: ${{ github.server_url }}/${{ github.repository }}/pull/${{ steps.pr-info.outputs.pr_number }}
+          - Date: ${{ steps.pr-info.outputs.today }}
+
+          **Requirements:**
+          - Educational content explaining concepts (not just what changed)
+          - Explore related files to understand patterns used in the PR
+          - Mermaid diagrams for architecture/flow
+          - REVIEW boxes for items needing human judgment
+          - No images - do not include any image references
+          - Proper Vue-compatible HTML (every tag must be closed)
+
+          ${{ steps.pr-info.outputs.instructions && format('**Additional Focus:** {0}', steps.pr-info.outputs.instructions) || '' }}
+
+          **PHASE 1 CHECKPOINT** - Before proceeding, verify:
+          ☐ File exists at .slides-working/slides.md
+          ☐ Frontmatter includes favicon using https://fav.farm/EMOJI format
+          ☐ Frontmatter includes `layout: cover` (first slide uses this layout)
+          ☐ First slide content (title) appears IMMEDIATELY after frontmatter (no --- separator)
+          ☐ Contains slide separators (---) for subsequent slides
+
+          ═══════════════════════════════════════════════════════════════
+          ## PHASE 2: VERIFY ACCURACY
+          ═══════════════════════════════════════════════════════════════
+
+          Re-read the slides you just wrote and verify accuracy:
+
+          1. **Code References**: For every code snippet or file reference:
+             - Read the actual files mentioned
+             - Confirm function names, types, and signatures are correct
+             - Check line numbers if mentioned
+
+          2. **Technical Claims**: Verify all technical statements:
+             - Check that described behaviors match actual code
+             - Verify architectural claims against the codebase
+
+          3. **PR Context**: Ensure slides accurately represent the PR:
+             - Re-read the diff to confirm nothing was misrepresented
+             - Check that "problem" and "solution" descriptions are accurate
+
+          4. **Date**: Confirm the date shown is: ${{ steps.pr-info.outputs.today }}
+
+          **Fix any inaccuracies** by editing .slides-working/slides.md
+          Do NOT add new content, only fix errors.
+
+          **PHASE 2 CHECKPOINT** - Before proceeding, verify:
+          ☐ All code snippets reference real files
+          ☐ Function signatures are correct
+          ☐ Technical claims are accurate
+
+          ═══════════════════════════════════════════════════════════════
+          ## PHASE 3: POLISH FOR QUALITY
+          ═══════════════════════════════════════════════════════════════
+
+          Final polish on the slides:
+
+          1. **Organization & Flow**
+             - Does the narrative flow logically?
+             - Is the first slide compelling (not empty)?
+
+          2. **Dark Mode Accessibility** (theme is dark)
+             - Avoid pure white (#fff) - use text-gray-200
+             - Ensure border colors are visible (border-gray-600)
+
+          3. **Content Overflow Prevention** (CRITICAL - content gets cut off!)
+             - Max 10-12 lines of content per slide (fewer is better)
+             - Code blocks max 12 lines - truncate or split if longer
+             - Split any slide that feels dense into 2+ slides
+             - Less content per slide = better readability
+
+          4. **HTML Safety for Vue/Slidev**
+             - Every <div> has matching </div>
+             - Self-closing tags use /> format
+             - No raw < or > in prose (use backticks)
+             - Generic types in backticks: `Promise<void>` not Promise<void>
+
+          **Make edits** to improve quality and ensure HTML is valid.
+
+          **FINAL CHECKPOINT:**
+          ☐ Narrative flows logically (first slide is title, not blank)
+          ☐ Favicon emoji is set and relevant to the PR
+          ☐ HTML is valid for Vue/Slidev compilation
+          ☐ Dark mode colors are accessible
+          ☐ NO slide has more than 12 lines of content (split if needed!)
+        claude_args: '--model ${{ inputs.model }} --allowedTools "Bash(gh:*),Read,Write,Edit,Glob,Grep" --max-turns 75'
+
+    # Verify slides were generated
+    - name: Verify slides
+      shell: bash
+      run: |
+        if [ ! -f .slides-working/slides.md ]; then
+          echo "::error::slides.md was not generated"
+          exit 1
+        fi
+        echo "Slides generated: $(wc -c < .slides-working/slides.md) bytes"
+
+    # Build slides
+    - name: Install dependencies
+      shell: bash
+      working-directory: .slides-working
+      run: bun install
+
+    - name: Build slides
+      id: build
+      shell: bash
+      working-directory: .slides-working
+      run: |
+        bun run build-slides.mjs
+        echo "path=$(pwd)/dist" >> $GITHUB_OUTPUT
+
+    # Deploy to Cloudflare (if selected)
+    - name: Create Cloudflare Pages project
+      if: inputs.deployment == 'cloudflare'
+      uses: cloudflare/wrangler-action@v3
+      continue-on-error: true
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
+      with:
+        wranglerVersion: '4.57.0'
+        apiToken: ${{ inputs.cloudflare_api_token }}
+        accountId: ${{ inputs.cloudflare_account_id }}
+        command: pages project create ${{ steps.prefix.outputs.prefix }}-pr-${{ steps.pr-info.outputs.pr_number }} --production-branch=main
+
+    - name: Deploy to Cloudflare Pages
+      id: deploy
+      if: inputs.deployment == 'cloudflare'
+      uses: cloudflare/wrangler-action@v3
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
+      with:
+        wranglerVersion: '4.57.0'
+        apiToken: ${{ inputs.cloudflare_api_token }}
+        accountId: ${{ inputs.cloudflare_account_id }}
+        command: pages deploy .slides-working/dist --project-name=${{ steps.prefix.outputs.prefix }}-pr-${{ steps.pr-info.outputs.pr_number }} --commit-dirty=true
+
+    - name: Set deployment URL
+      id: url
+      shell: bash
+      run: |
+        if [[ "${{ inputs.deployment }}" == "cloudflare" ]]; then
+          echo "url=https://${{ steps.prefix.outputs.prefix }}-pr-${{ steps.pr-info.outputs.pr_number }}.pages.dev" >> $GITHUB_OUTPUT
+        else
+          echo "url=" >> $GITHUB_OUTPUT
+        fi
+
+    # Upload artifact (for artifact-only or as backup)
+    - name: Upload slides artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: slides-pr-${{ steps.pr-info.outputs.pr_number }}
+        path: .slides-working/dist
+        retention-days: 30
+
+    # Post success comment
+    - name: Post success comment
+      uses: actions/github-script@v7
+      env:
+        DEPLOYMENT_URL: ${{ steps.url.outputs.url }}
+        PR_NUMBER: ${{ steps.pr-info.outputs.pr_number }}
+        DEPLOYMENT_TYPE: ${{ inputs.deployment }}
+      with:
+        github-token: ${{ inputs.github_token }}
+        script: |
+          const prNumber = process.env.PR_NUMBER;
+          const url = process.env.DEPLOYMENT_URL;
+          const deploymentType = process.env.DEPLOYMENT_TYPE;
+
+          let body;
+          if (deploymentType === 'cloudflare' && url) {
+            body = [
+              '## PR Review Slides',
+              '',
+              'Your presentation is ready:',
+              '',
+              `**[View Slides](${url})**`,
+              '',
+              `_Generated from PR #${prNumber} diff. Regenerate by commenting \`${{ inputs.command }}\` again._`,
+              '',
+              '<!-- slides-pls-comment -->',
+            ].join('\n');
+          } else {
+            body = [
+              '## PR Review Slides',
+              '',
+              'Your presentation has been generated and uploaded as an artifact.',
+              '',
+              'Download from the workflow run artifacts.',
+              '',
+              `_Generated from PR #${prNumber} diff. Regenerate by commenting \`${{ inputs.command }}\` again._`,
+              '',
+              '<!-- slides-pls-comment -->',
+            ].join('\n');
+          }
+
+          // Find and update existing comment or create new
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+
+          const existing = comments.find(c =>
+            c.user.type === 'Bot' && c.body.includes('<!-- slides-pls-comment -->')
+          );
+
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existing.id,
+              body,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+          }
+
+          // Add rocket reaction
+          try {
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+          } catch (e) {
+            console.log('Could not add reaction:', e.message);
+          }

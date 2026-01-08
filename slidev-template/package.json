@@ -1,0 +1,13 @@
+{
+  "name": "pr-slides",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "slidev",
+    "build": "slidev build --out dist --base /"
+  },
+  "dependencies": {
+    "@slidev/cli": "52.2.5",
+    "@slidev/theme-default": "0.25.0"
+  }
+}

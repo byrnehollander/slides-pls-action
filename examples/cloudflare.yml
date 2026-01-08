@@ -1,0 +1,35 @@
+# Full example with Cloudflare Pages deployment
+# Copy this to .github/workflows/slides.yml in your repo
+
+name: PR Slides
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: slides-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  generate-slides:
+    name: Generate & Deploy Slides
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/slides')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: byrnehollander/slides-pls-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          # Optional customizations:
+          # command: '/generate-slides'           # Change trigger command
+          # project_prefix: 'mycompany'           # URL prefix
+          # model: 'claude-opus-4-5-20250514'     # Use Opus for better quality

@@ -1,0 +1,43 @@
+# Example without automatic deployment
+# Slides are uploaded as a workflow artifact for manual download/deployment
+# Copy this to .github/workflows/slides.yml in your repo
+
+name: PR Slides
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: write  # Needed for artifact upload
+
+concurrency:
+  group: slides-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  generate-slides:
+    name: Generate Slides
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/slides')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: byrnehollander/slides-pls-action@v1
+        id: slides
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          deployment: 'artifact-only'
+
+      # The built slides are available at:
+      # - ${{ steps.slides.outputs.slides_path }} (directory path)
+      # - As a downloadable artifact named "slides-pr-{number}"
+
+      # Optional: Deploy to your own infrastructure
+      # - name: Deploy to Vercel
+      #   run: vercel deploy ${{ steps.slides.outputs.slides_path }} --prod
+      #   env:
+      #     VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
