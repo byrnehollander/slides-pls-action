@@ -108,9 +108,10 @@ runs:
         echo "today=$(TZ=America/New_York date +'%B %-d, %Y')" >> $GITHUB_OUTPUT
 
         # Extract any instructions after the command
+        # Note: Using sed for whitespace trimming instead of xargs to handle quotes/apostrophes in comments
         COMMENT_BODY="${{ github.event.comment.body }}"
         COMMAND="${{ inputs.command }}"
-        INSTRUCTIONS=$(echo "$COMMENT_BODY" | sed "s|$COMMAND||" | xargs)
+        INSTRUCTIONS=$(echo "$COMMENT_BODY" | sed "s|$COMMAND||" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         echo "instructions=$INSTRUCTIONS" >> $GITHUB_OUTPUT
 
     # Determine project prefix
