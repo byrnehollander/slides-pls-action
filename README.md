@@ -53,7 +53,7 @@ jobs:
 |-------|---------|-------------|
 | `command` | `/slides` | Trigger command |
 | `project_prefix` | repo name | URL prefix (`acme` → `acme-pr-123.pages.dev`) |
-| `model` | `claude-opus-4-5` | Or `claude-sonnet-4` for lower cost |
+| `model` | `claude-opus-4-5` | Or `claude-sonnet-4-5` for lower cost |
 | `deployment` | `cloudflare` | Or `artifact-only` to deploy yourself |
 
 ```yaml
