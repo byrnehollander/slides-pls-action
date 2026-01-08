@@ -39,7 +39,7 @@ inputs:
 outputs:
   slides_url:
     description: 'URL to the deployed presentation'
-    value: ${{ steps.deploy.outputs.url }}
+    value: ${{ steps.url.outputs.url }}
   slides_path:
     description: 'Path to built slides directory'
     value: ${{ steps.build.outputs.path }}
