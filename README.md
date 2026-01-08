@@ -1,16 +1,14 @@
 # slides-pls 📽️
 
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-slides--pls-blue?logo=github)](https://github.com/marketplace/actions/slides-pls)
+
 > Turn PR diffs into presentations your team will actually read
 
-Big PRs are hard to review. Code changes don't tell the full story—why was this approach chosen? What patterns does this follow? What should reviewers focus on?
+Comment `/slides` on any PR → get a deployed presentation explaining the changes.
 
-**slides-pls** uses Claude AI to analyze your PR, explore the codebase for context, and generate a presentation that explains the changes. Comment `/slides` on any PR to try it.
+## Setup (1 minute)
 
-## Quick Start (2 minutes)
-
-### 1. Add the workflow
-
-Create `.github/workflows/slides.yml`:
+**1. Copy this workflow** to `.github/workflows/slides.yml`:
 
 ```yaml
 name: PR Slides
@@ -34,167 +32,54 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          cloudflare_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
-### 2. Add secrets
+**2. Add secrets** (Settings → Secrets and variables → Actions):
 
-In your repo settings → Secrets and variables → Actions:
-
-| Name | Where to get it |
-|------|-----------------|
-| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) |
-| `CLOUDFLARE_API_TOKEN` | [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) - needs "Cloudflare Pages:Edit" permission |
-| `CLOUDFLARE_ACCOUNT_ID` | Found in your Cloudflare dashboard URL or sidebar |
-
-> **Note:** All inputs accept either secrets (`${{ secrets.X }}`) or variables (`${{ vars.X }}`). Use whichever fits your setup.
-
-### 3. Use it
-
-Comment `/slides` on any PR. That's it!
-
----
-
-## Configuration
-
-### All Inputs
-
-| Input | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `anthropic_api_key` | **Yes** | - | Your Anthropic API key |
-| `github_token` | **Yes** | - | GitHub token for PR access |
-| `deployment` | No | `cloudflare` | `cloudflare` or `artifact-only` |
-| `cloudflare_api_token` | If cloudflare | - | Cloudflare API token |
-| `cloudflare_account_id` | If cloudflare | - | Cloudflare account ID |
-| `project_prefix` | No | repo name | URL prefix (e.g., `acme` → `acme-pr-123.pages.dev`) |
-| `model` | No | `claude-sonnet-4-20250514` | Claude model (e.g., `claude-opus-4-5-20250514`) |
-| `command` | No | `/slides` | Trigger command in comments |
-
-### Outputs
-
-| Output | Description |
+| Secret | Get it from |
 |--------|-------------|
-| `slides_url` | URL to the deployed presentation |
-| `slides_path` | Path to built slides directory |
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) |
+| `CLOUDFLARE_API_TOKEN` | [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) (needs Pages:Edit) |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare dashboard sidebar |
+
+**3. Comment `/slides` on any PR.** Done!
 
 ---
 
-## Examples
+## Options
 
-### Basic (Cloudflare deployment)
+| Input | Default | Description |
+|-------|---------|-------------|
+| `command` | `/slides` | Trigger command |
+| `project_prefix` | repo name | URL prefix (`acme` → `acme-pr-123.pages.dev`) |
+| `model` | `claude-sonnet-4-20250514` | Use `claude-opus-4-5-20250514` for higher quality |
+| `deployment` | `cloudflare` | Or `artifact-only` to deploy yourself |
 
 ```yaml
+# Example with options
 - uses: byrnehollander/slides-pls-action@v1
   with:
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
     github_token: ${{ secrets.GITHUB_TOKEN }}
     cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    cloudflare_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+    cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    command: '/generate-slides'
+    project_prefix: 'mycompany'
 ```
 
-### Custom command and prefix
-
-```yaml
-- uses: byrnehollander/slides-pls-action@v1
-  with:
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    cloudflare_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-    command: '/generate-slides'      # Custom trigger
-    project_prefix: 'mycompany'      # mycompany-pr-123.pages.dev
-```
-
-### Use Claude Opus for higher quality
-
-```yaml
-- uses: byrnehollander/slides-pls-action@v1
-  with:
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    cloudflare_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-    model: 'claude-opus-4-5-20250514'
-```
-
-### Artifact-only (no deployment)
-
-If you want to deploy yourself or just download the slides:
-
-```yaml
-- uses: byrnehollander/slides-pls-action@v1
-  id: slides
-  with:
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    deployment: 'artifact-only'
-
-# Slides are available as an artifact and at ${{ steps.slides.outputs.slides_path }}
-```
-
-### Migrating from a custom workflow
-
-If you have an existing slides workflow with custom settings:
-
-```yaml
-- uses: byrnehollander/slides-pls-action@v1
-  with:
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}  # or vars.X
-    command: '/generate-slides'     # Your existing trigger
-    project_prefix: 'myapp'         # Your existing URL prefix
-    model: 'claude-opus-4-5-20250514'  # Optional: use Opus
-```
-
----
-
-## Passing Instructions
-
-You can pass extra instructions after the command:
-
-```
-/slides Focus on the security implications
-```
-
-```
-/slides This is a performance optimization, explain the tradeoffs
-```
+You can also pass instructions: `/slides Focus on the security implications`
 
 ---
 
 ## Troubleshooting
 
-### "slides.md was not generated"
+**Build errors?** The action retries with progressively simpler HTML. Check workflow logs for details.
 
-Claude may have failed to write the file. Check the workflow logs for the Claude step.
-
-### Build errors
-
-The action has a 3-attempt fallback system:
-1. Normal Slidev build
-2. Stripped HTML (removes custom styling)
-3. Minimal error page
-
-If all fail, check the logs for the specific Vue/HTML error.
-
-### Cloudflare deployment failed
-
-- Verify your `CLOUDFLARE_API_TOKEN` has "Cloudflare Pages:Edit" permission
-- Verify your `CLOUDFLARE_ACCOUNT_ID` is correct (it's a 32-character hex string)
+**Cloudflare failed?** Verify your API token has "Cloudflare Pages:Edit" permission.
 
 ---
 
 ## License
 
-MIT
-
----
-
-## Contributing
-
-Issues and PRs welcome! This action is built on:
-- [Slidev](https://sli.dev/) - Presentation framework
-- [claude-code-action](https://github.com/anthropics/claude-code-action) - Claude integration
-- [Cloudflare Pages](https://pages.cloudflare.com/) - Deployment
+MIT — built on [Slidev](https://sli.dev/), [claude-code-action](https://github.com/anthropics/claude-code-action), and [Cloudflare Pages](https://pages.cloudflare.com/)
