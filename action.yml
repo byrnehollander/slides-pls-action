@@ -144,7 +144,7 @@ runs:
         prompt: |
           Generate a Slidev presentation for PR #${{ steps.pr-info.outputs.pr_number }}.
 
-          Your task has THREE PHASES. Complete each phase in sequence.
+          Your task has THREE PHASES. Complete each phase in sequence. Use ULTRATHINK
 
           ═══════════════════════════════════════════════════════════════
           ## PHASE 1: GENERATE
