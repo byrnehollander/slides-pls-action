@@ -1,8 +1,10 @@
 # slides-pls 📽️
 
-> Generate beautiful Slidev presentations from PR diffs using Claude AI
+> Turn PR diffs into presentations your team will actually read
 
-Comment `/slides` on any PR and get an educational presentation explaining the changes - deployed automatically.
+Big PRs are hard to review. Code changes don't tell the full story—why was this approach chosen? What patterns does this follow? What should reviewers focus on?
+
+**slides-pls** uses Claude AI to analyze your PR, explore the codebase for context, and generate a presentation that explains the changes. Comment `/slides` on any PR to try it.
 
 ## Quick Start (2 minutes)
 
@@ -47,19 +49,6 @@ In your repo settings → Secrets and variables → Actions:
 ### 3. Use it
 
 Comment `/slides` on any PR. That's it!
-
----
-
-## What You Get
-
-Claude AI:
-- Reads the PR diff and explores related files
-- Explains **why** the changes matter, not just what changed
-- Creates educational slides with code examples
-- Highlights review focus areas and potential risks
-- Includes architecture diagrams when helpful
-
-The presentation is deployed to Cloudflare Pages at `https://{prefix}-pr-{number}.pages.dev`.
 
 ---
 
@@ -153,22 +142,6 @@ You can pass extra instructions after the command:
 ```
 /slides This is a performance optimization, explain the tradeoffs
 ```
-
----
-
-## How It Works
-
-1. **Trigger**: You comment `/slides` on a PR
-2. **Analysis**: Claude AI reads the diff and explores related code
-3. **Generation**: A Slidev presentation is created with:
-   - Problem/solution overview
-   - Educational background on concepts
-   - Code walkthroughs
-   - Review focus areas
-   - What's good about the PR
-4. **Build**: Slidev compiles to static HTML (with automatic fallbacks if needed)
-5. **Deploy**: Published to Cloudflare Pages (or as artifact)
-6. **Comment**: A link is posted on the PR
 
 ---
 

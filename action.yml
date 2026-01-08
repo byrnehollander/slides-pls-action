@@ -122,6 +122,8 @@ runs:
         if [[ -z "$PREFIX" ]]; then
           PREFIX="${{ github.event.repository.name }}"
         fi
+        # Cloudflare Pages requires lowercase project names
+        PREFIX=$(echo "$PREFIX" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
         echo "prefix=$PREFIX" >> $GITHUB_OUTPUT
 
     # Copy slidev template to working directory
