@@ -30,7 +30,7 @@ inputs:
   model:
     description: 'Claude model to use'
     required: false
-    default: 'claude-sonnet-4-20250514'
+    default: 'claude-opus-4-5-20250514'
   command:
     description: 'Trigger command in PR comments'
     required: false
