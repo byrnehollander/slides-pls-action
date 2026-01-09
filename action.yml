@@ -102,15 +102,17 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github_token }}
+        # SECURITY: These must be in env block, not inline bash assignment.
+        # Inline assignment like COMMENT_BODY="${{ ... }}" causes shell injection
+        # when comments contain backticks (bash interprets them as command substitution).
+        COMMENT_BODY: ${{ github.event.comment.body }}
+        COMMAND: ${{ inputs.command }}
       run: |
         PR_NUMBER="${{ github.event.issue.number }}"
         echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
         echo "today=$(TZ=America/New_York date +'%B %-d, %Y')" >> $GITHUB_OUTPUT
 
         # Extract any instructions after the command
-        # Note: Using sed for whitespace trimming instead of xargs to handle quotes/apostrophes in comments
-        COMMENT_BODY="${{ github.event.comment.body }}"
-        COMMAND="${{ inputs.command }}"
         INSTRUCTIONS=$(echo "$COMMENT_BODY" | sed "s|$COMMAND||" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         echo "instructions=$INSTRUCTIONS" >> $GITHUB_OUTPUT
 
