@@ -83,7 +83,9 @@ runs:
           slidev-template
 
     # Add eyes reaction to acknowledge the request
+    # Only add reaction for issue_comment events (pull_request events have no comment)
     - name: Acknowledge request
+      if: github.event_name == 'issue_comment'
       uses: actions/github-script@v7
       continue-on-error: true
       with:
@@ -108,7 +110,9 @@ runs:
         COMMENT_BODY: ${{ github.event.comment.body }}
         COMMAND: ${{ inputs.command }}
       run: |
-        PR_NUMBER="${{ github.event.issue.number }}"
+        # Support both issue_comment events (PR number in issue.number) and
+        # pull_request events (PR number in pull_request.number)
+        PR_NUMBER="${{ github.event.issue.number || github.event.pull_request.number }}"
         echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
         echo "today=$(TZ=America/New_York date +'%B %-d, %Y')" >> $GITHUB_OUTPUT
 
@@ -329,6 +333,10 @@ runs:
           const url = process.env.DEPLOYMENT_URL;
           const deploymentType = process.env.DEPLOYMENT_TYPE;
 
+          // Get issue number - works for both issue_comment and pull_request events
+          const issueNumber = context.issue?.number || context.payload.pull_request?.number;
+
+
           let body;
           if (deploymentType === 'cloudflare' && url) {
             body = [
@@ -360,7 +368,7 @@ runs:
           const { data: comments } = await github.rest.issues.listComments({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: context.issue.number,
+            issue_number: issueNumber,
           });
 
           const existing = comments.find(c =>
@@ -378,7 +386,7 @@ runs:
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: issueNumber,
               body,
             });
           }
@@ -402,6 +410,9 @@ runs:
       with:
         github-token: ${{ inputs.github_token }}
         script: |
+          // Get issue number - works for both issue_comment and pull_request events
+          const issueNumber = context.issue?.number || context.payload.pull_request?.number;
+
           // Add confused reaction to indicate failure
           try {
             await github.rest.reactions.createForIssueComment({
@@ -427,6 +438,6 @@ runs:
           await github.rest.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: context.issue.number,
+            issue_number: issueNumber,
             body,
           });
