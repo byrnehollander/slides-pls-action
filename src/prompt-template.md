@@ -234,7 +234,8 @@ Create five questions. Each question gets its own slide, and the answer appears 
 - Do NOT show the correct choice until reveal
 - Reveal both the correct choice and the 1-2 line explanation together with `v-click`
 - Options must be short phrases (3-6 words), not sentences
-- Each option must be on its own line
+- Each option must be in its own block (never inline on the same line)
+- Use the 2x2 grid option cards below to guarantee separation
 
 Question + answer slide example:
 
@@ -245,10 +246,20 @@ Question + answer slide example:
 
 Which change reduces the risk of [X]?
 
-A) ...
-B) ...
-C) ...
-D) ...
+<div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+  <div class="rounded border border-slate-500 bg-slate-800 p-2">
+    <span class="font-bold text-blue-300">A)</span> ...
+  </div>
+  <div class="rounded border border-slate-500 bg-slate-800 p-2">
+    <span class="font-bold text-blue-300">B)</span> ...
+  </div>
+  <div class="rounded border border-slate-500 bg-slate-800 p-2">
+    <span class="font-bold text-blue-300">C)</span> ...
+  </div>
+  <div class="rounded border border-slate-500 bg-slate-800 p-2">
+    <span class="font-bold text-blue-300">D)</span> ...
+  </div>
+</div>
 
 <div v-click>
   Correct: B
