@@ -226,16 +226,15 @@ End with files to review and key points:
 [Link to PR]
 ```
 
-### 10. "Knowledge Check" (REQUIRED, 10 slides total)
+### 10. "Knowledge Check" (REQUIRED, 5 slides total)
 
-Create five questions and five answer slides. Each question gets its own slide. Each answer appears later on its own slide with a reveal.
+Create five questions. Each question gets its own slide, and the answer appears on the SAME slide via reveal.
 
-- Questions first (1-5), then answers (1-5)
 - Keep each question slide to 6-8 lines max
-- Answers: show the correct choice immediately, then reveal a 1-2 line explanation with `v-click`
-- Options should be short phrases, not sentences
+- Show the correct choice immediately, then reveal a 1-2 line explanation with `v-click`
+- Options must be short phrases (3-6 words), not sentences
 
-Question slide example:
+Question + answer slide example:
 
 ```markdown
 ---
@@ -248,14 +247,6 @@ A) ...
 B) ...
 C) ...
 D) ...
-```
-
-Answer slide example:
-
-```markdown
----
-
-# Knowledge Check 1 — Answer
 
 Correct: B
 <div v-click class="mt-2 text-sm text-gray-200">Brief explanation (1-2 lines).</div>
@@ -291,11 +282,11 @@ For showing alternatives or before/after:
 <div class="mt-4 grid grid-cols-2 gap-8">
   <div class="rounded border-2 border-red-400 bg-red-950 p-4">
     <div class="mb-2 font-bold text-red-400">Before / Problem</div>
-    [code or explanation]
+    <div class="text-sm text-gray-300">[short explanation, max 6 lines]</div>
   </div>
   <div class="rounded border-2 border-green-400 bg-green-950 p-4">
     <div class="mb-2 font-bold text-green-400">After / Solution</div>
-    [code or explanation]
+    <div class="text-sm text-gray-300">[short explanation, max 6 lines]</div>
   </div>
 </div>
 ```
@@ -332,6 +323,7 @@ Slides have fixed viewport height. Content that overflows is HIDDEN and breaks t
 - **Multiple code blocks per slide**: One code block per slide max
 - **Long mermaid diagrams**: Keep to 5-7 nodes; split complex flows across slides
 - **Nested containers**: Avoid putting boxes inside boxes
+- **Dense card text**: If a card needs more than 2 short lines, move content to bullets
 
 ### When Content Is Too Long
 
@@ -351,10 +343,17 @@ Slides have fixed viewport height. Content that overflows is HIDDEN and breaks t
 
 ### Diagram Design Rules (CRITICAL)
 
+- If there is a 30%+ chance the diagram will overflow, DO NOT use a diagram; use bullets instead
 - Keep to 5-7 nodes and 1-2 edges per node
-- Use short labels and include tiny example data in labels (e.g., `order_id=42`)
+- Use short labels (<= 12 chars) and include tiny example data in labels (e.g., `order_id=42`)
 - Prefer one or two diagram families reused across slides
 - Split complex flows across multiple slides
+
+### Card/Text Density Rules (CRITICAL)
+
+- Any text inside cards/boxes must be `text-sm` and <= 2 short lines
+- If a card needs more than 12 words, move it to bullets on a separate slide
+- Avoid large headings inside cards; use one short label + 1-2 lines body
 
 ## Content Guidelines
 
