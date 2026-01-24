@@ -231,8 +231,10 @@ End with files to review and key points:
 Create five questions. Each question gets its own slide, and the answer appears on the SAME slide via reveal.
 
 - Keep each question slide to 6-8 lines max
-- Show the correct choice immediately, then reveal a 1-2 line explanation with `v-click`
+- Do NOT show the correct choice until reveal
+- Reveal both the correct choice and the 1-2 line explanation together with `v-click`
 - Options must be short phrases (3-6 words), not sentences
+- Each option must be on its own line
 
 Question + answer slide example:
 
@@ -248,8 +250,10 @@ B) ...
 C) ...
 D) ...
 
-Correct: B
-<div v-click class="mt-2 text-sm text-gray-200">Brief explanation (1-2 lines).</div>
+<div v-click>
+  Correct: B
+  <div class="mt-2 text-sm text-gray-200">Brief explanation (1-2 lines).</div>
+</div>
 ```
 
 ## Formatting Reference
@@ -343,7 +347,9 @@ Slides have fixed viewport height. Content that overflows is HIDDEN and breaks t
 
 ### Diagram Design Rules (CRITICAL)
 
-- If there is a 30%+ chance the diagram will overflow, DO NOT use a diagram; use bullets instead
+- Do NOT use a diagram unless it is clearly the best way to explain the change
+- If the idea can be explained with bullets, use bullets
+- Only use a diagram if it is very unlikely to overflow or get cramped
 - Keep to 5-7 nodes and 1-2 edges per node
 - Use short labels (<= 12 chars) and include tiny example data in labels (e.g., `order_id=42`)
 - Prefer one or two diagram families reused across slides
@@ -361,7 +367,7 @@ Slides have fixed viewport height. Content that overflows is HIDDEN and breaks t
 2. **Highlight risks**: Call out security, performance, or correctness concerns in REVIEW boxes
 3. **Show code context**: Include enough surrounding code for understanding
 4. **Keep slides focused**: One concept per slide
-5. **Use diagrams**: Mermaid diagrams help explain flows and architecture (keep them tiny)
+5. **Use diagrams sparingly**: Only when essential and guaranteed to fit; prefer bullets
 6. **Balance criticism with praise**: Include "What's Good" to acknowledge good work
 7. **Be specific**: "Check error handling in getVerification" > "Review error handling"
 8. **Prefer more slides over dense slides**: Splitting content is always safer than risking overflow
