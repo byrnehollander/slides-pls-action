@@ -19,6 +19,8 @@ Do NOT use placeholder dates or leave dates blank.
 
 Generate ONLY Slidev markdown content. Do not include any explanation outside the slides.
 
+Write with clear, classic narrative flow (Kleppmann-like). Use short sentences and smooth transitions. If you add a transition line, keep it to 1 short line and count it against the slide limits.
+
 ### Frontmatter + First Slide (CRITICAL)
 
 The global frontmatter and first slide content are combined. **Do NOT add a `---` separator after the frontmatter**—the content immediately after the closing `---` IS slide 1.
@@ -101,6 +103,13 @@ Explain patterns, libraries, or domain concepts reviewers need to understand:
 - Include architecture diagrams with mermaid when helpful
 - Show code examples of existing patterns
 - Keep explanations practical, not academic
+- Use a beginner-friendly mini-bridge (1 line) only if it fits without overflow
+
+### 3b. "Core Intuition" Slide (NEW, 1 slide)
+
+Explain the core intuition with a toy example and a small mermaid diagram (5-7 nodes max).
+Keep to 8-10 lines total. Use short labels and example data.
+Keep the toy example to 2-3 steps and 1-2 values (e.g., `user_id=123`).
 
 ### 4. "The Problem" Slide
 
@@ -138,6 +147,13 @@ If there were alternative approaches considered:
 </div>
 </div>
 ```
+
+### 6b. "Verification & QA" Slide (NEW, 1 slide)
+
+Explain how correctness was verified:
+
+- Tests run (or explicitly state "Not run")
+- 2-4 manual QA steps a reviewer can follow
 
 ### 7. "Review Focus Areas" Slide
 
@@ -210,6 +226,41 @@ End with files to review and key points:
 [Link to PR]
 ```
 
+### 10. "Knowledge Check" (REQUIRED, 10 slides total)
+
+Create five questions and five answer slides. Each question gets its own slide. Each answer appears later on its own slide with a reveal.
+
+- Questions first (1-5), then answers (1-5)
+- Keep each question slide to 6-8 lines max
+- Answers: show the correct choice immediately, then reveal a 1-2 line explanation with `v-click`
+- Options should be short phrases, not sentences
+
+Question slide example:
+
+```markdown
+---
+
+# Knowledge Check 1
+
+Which change reduces the risk of [X]?
+
+A) ...
+B) ...
+C) ...
+D) ...
+```
+
+Answer slide example:
+
+```markdown
+---
+
+# Knowledge Check 1 — Answer
+
+Correct: B
+<div v-click class="mt-2 text-sm text-gray-200">Brief explanation (1-2 lines).</div>
+```
+
 ## Formatting Reference
 
 ### Code Blocks
@@ -273,6 +324,7 @@ Slides have fixed viewport height. Content that overflows is HIDDEN and breaks t
 | Prose + code mixed | 6 lines prose + 8 lines code     |
 | Bullet points      | 6-8 items max                    |
 | Grid boxes         | 4 boxes max, 2-3 lines text each |
+| Long paragraphs    | Avoid; split into bullets        |
 
 ### High-Risk Patterns (Avoid)
 
@@ -297,13 +349,20 @@ Slides have fixed viewport height. Content that overflows is HIDDEN and breaks t
 ✓ Title + 2x2 grid of short text boxes (no code inside)
 ✓ Title + before/after comparison with 6-8 lines each side
 
+### Diagram Design Rules (CRITICAL)
+
+- Keep to 5-7 nodes and 1-2 edges per node
+- Use short labels and include tiny example data in labels (e.g., `order_id=42`)
+- Prefer one or two diagram families reused across slides
+- Split complex flows across multiple slides
+
 ## Content Guidelines
 
 1. **Be educational**: Explain the "why" behind changes, not just the "what"
 2. **Highlight risks**: Call out security, performance, or correctness concerns in REVIEW boxes
 3. **Show code context**: Include enough surrounding code for understanding
 4. **Keep slides focused**: One concept per slide
-5. **Use diagrams**: Mermaid diagrams help explain flows and architecture
+5. **Use diagrams**: Mermaid diagrams help explain flows and architecture (keep them tiny)
 6. **Balance criticism with praise**: Include "What's Good" to acknowledge good work
 7. **Be specific**: "Check error handling in getVerification" > "Review error handling"
 8. **Prefer more slides over dense slides**: Splitting content is always safer than risking overflow

@@ -286,7 +286,7 @@ runs:
         wranglerVersion: '4.57.0'
         apiToken: ${{ inputs.cloudflare_api_token }}
         accountId: ${{ inputs.cloudflare_account_id }}
-        command: pages project create ${{ steps.prefix.outputs.prefix }}-pr-${{ steps.pr-info.outputs.pr_number }} --production-branch=main
+        command: pages project create ${{ steps.prefix.outputs.prefix }}-pr-${{ steps.pr-info.outputs.pr_number }} --production-branch=${{ github.event.repository.default_branch }}
 
     - name: Deploy to Cloudflare Pages
       id: deploy
@@ -299,7 +299,7 @@ runs:
         wranglerVersion: '4.57.0'
         apiToken: ${{ inputs.cloudflare_api_token }}
         accountId: ${{ inputs.cloudflare_account_id }}
-        command: pages deploy .slides-working/dist --project-name=${{ steps.prefix.outputs.prefix }}-pr-${{ steps.pr-info.outputs.pr_number }} --commit-dirty=true
+        command: pages deploy .slides-working/dist --project-name=${{ steps.prefix.outputs.prefix }}-pr-${{ steps.pr-info.outputs.pr_number }} --branch=${{ github.event.repository.default_branch }} --commit-dirty=true
 
     - name: Set deployment URL
       id: url
